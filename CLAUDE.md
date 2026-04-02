@@ -72,6 +72,16 @@ Full-stack application with three layers:
 - **Database**: PostgreSQL with SQLAlchemy ORM. Migrations tracked (Alembic when needed)
 - **Environment Variables**: Stored in `.env` (git-ignored). Backend reads DB credentials and API keys from environment
 
+## Newsletter Feature
+
+Weekly digest email sent to subscribers with curated/unique events for the upcoming week.
+
+- **Subscribers**: Users sign up with email via the frontend; stored in the database
+- **Digest Generation**: Backend service bundles the week's notable events into a newsletter
+- **Delivery**: Email sending service (e.g., SendGrid, Resend, or SMTP) triggered on a schedule
+- **Backend**: `/subscribers` endpoints for signup/unsubscribe; `/newsletter` endpoints for preview/send
+- **Frontend**: Subscribe form component; optional newsletter preview page
+
 ## Data Sources (Cleveland, OH)
 
 Target sources for local events and attractions:

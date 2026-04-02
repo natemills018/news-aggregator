@@ -1,18 +1,19 @@
+import { Link } from "react-router-dom";
 
 const Header = () => (
-    <header className="bg-orange-600 text-white px-8 py-4 flex items-center justify-between">
-        <h1 className="m-0 text-2xl tracking-wide font-bold">
-            Reddit News Aggregator
-        </h1>
-        <nav>
-            <a href="/" className="text-white no-underline mr-6 hover:underline">
-                Home
-            </a>
-            <a href="/about" className="text-white no-underline hover:underline">
-                About
-            </a>
-        </nav>
-    </header>
+  <header className="bg-orange-600 text-white px-8 py-4 flex items-center justify-between shadow-md">
+    <Link to="/" className="no-underline text-white">
+      <h1 className="m-0 text-2xl tracking-wide font-bold">CLE Local</h1>
+    </Link>
+    <nav className="flex gap-6">
+      <Link to="/" className="text-white no-underline hover:underline">
+        Events
+      </Link>
+      <Link to="/venues" className="text-white no-underline hover:underline">
+        Venues
+      </Link>
+    </nav>
+  </header>
 );
 
 export default Header;

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine, SessionLocal
-from app.routers import events, venues, categories
+from app.routers import events, venues, categories, subscribers, newsletter
 from app.seed import seed_data
 
 
@@ -32,6 +32,8 @@ app.add_middleware(
 app.include_router(events.router)
 app.include_router(venues.router)
 app.include_router(categories.router)
+app.include_router(subscribers.router)
+app.include_router(newsletter.router)
 
 
 @app.get("/health")
