@@ -44,3 +44,18 @@ def send_verification_email(to_email: str, name: str | None, token: str) -> None
         "subject": "Confirm your CLE Local subscription",
         "html": html,
     })
+
+
+def send_digest_email(to_email: str, html: str) -> None:
+    """Send the weekly digest to a subscriber."""
+    if not RESEND_API_KEY:
+        print(f"[DEV] Would send digest to {to_email}")
+        return
+
+    resend.api_key = RESEND_API_KEY
+    resend.Emails.send({
+        "from": FROM_EMAIL,
+        "to": [to_email],
+        "subject": "Your CLE Local Weekly Digest",
+        "html": html,
+    })

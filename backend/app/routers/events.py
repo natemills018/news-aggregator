@@ -12,6 +12,7 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 @router.get("/", response_model=list[EventRead])
 def list_events(
+    search: str | None = None,
     category_id: int | None = None,
     venue_id: int | None = None,
     from_date: datetime | None = None,
@@ -22,6 +23,8 @@ def list_events(
 ):
     query = db.query(Event).options(joinedload(Event.category), joinedload(Event.venue))
 
+    if search:
+        query = query.filter(Event.title.ilike(f"%{search}%"))
     if category_id:
         query = query.filter(Event.category_id == category_id)
     if venue_id:

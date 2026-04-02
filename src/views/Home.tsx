@@ -7,6 +7,7 @@ const Home = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,11 +16,13 @@ const Home = () => {
 
   useEffect(() => {
     setLoading(true);
-    const params = selectedCategory ? { category_id: selectedCategory } : {};
+    const params: Record<string, string | number> = {};
+    if (selectedCategory) params.category_id = selectedCategory;
+    if (search.trim()) params.search = search.trim();
     getEvents(params)
       .then(setEvents)
       .finally(() => setLoading(false));
-  }, [selectedCategory]);
+  }, [selectedCategory, search]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -30,6 +33,15 @@ const Home = () => {
         <p className="text-gray-500 mb-4">
           Events, attractions, and things to do around CLE
         </p>
+
+        <input
+          type="text"
+          placeholder="Search events..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        />
+
         <CategoryFilter
           categories={categories}
           selected={selectedCategory}

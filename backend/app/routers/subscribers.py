@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.subscriber import Subscriber, generate_token
 from app.schemas.subscriber import SubscriberCreate, SubscriberRead
+from app.auth import require_admin
 from app.services.email import send_verification_email
 
 router = APIRouter(prefix="/subscribers", tags=["subscribers"])
@@ -69,7 +70,7 @@ def unsubscribe(email: str, db: Session = Depends(get_db)):
     return {"detail": "Unsubscribed"}
 
 
-@router.get("/", response_model=list[SubscriberRead])
+@router.get("/", response_model=list[SubscriberRead], dependencies=[Depends(require_admin)])
 def list_subscribers(db: Session = Depends(get_db)):
     return (
         db.query(Subscriber)

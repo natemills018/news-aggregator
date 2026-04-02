@@ -12,6 +12,9 @@ const Header = () => (
       <Link to="/venues" className="text-white no-underline hover:underline">
         Venues
       </Link>
+      <Link to="/admin" className="text-white/70 no-underline hover:underline text-sm">
+        Admin
+      </Link>
     </nav>
   </header>
 );

@@ -9,6 +9,7 @@ async function fetchJson<T>(url: string): Promise<T> {
 }
 
 export async function getEvents(params?: {
+  search?: string;
   category_id?: number;
   venue_id?: number;
   from_date?: string;
@@ -47,4 +48,40 @@ export async function subscribe(email: string, name?: string): Promise<void> {
   });
   if (res.status === 409) throw new Error("already_subscribed");
   if (!res.ok) throw new Error(`API error: ${res.status}`);
+}
+
+// Admin endpoints
+
+function adminHeaders(apiKey: string) {
+  return { "X-Admin-Key": apiKey };
+}
+
+export async function getSubscribers(apiKey: string) {
+  const res = await fetch(`${API_BASE}/subscribers/`, {
+    headers: adminHeaders(apiKey),
+  });
+  if (res.status === 403) throw new Error("invalid_key");
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
+export async function getDigestPreview(apiKey: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/newsletter/preview`);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.text();
+}
+
+export async function sendDigest(apiKey: string): Promise<{
+  sent: number;
+  total_subscribers: number;
+  events_included: number;
+  errors: { email: string; error: string }[];
+}> {
+  const res = await fetch(`${API_BASE}/newsletter/send`, {
+    method: "POST",
+    headers: adminHeaders(apiKey),
+  });
+  if (res.status === 403) throw new Error("invalid_key");
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
 }
