@@ -31,3 +31,10 @@ __pycache__/
 
 # Screenshots
 *.png
+
+# ocli
+.ocli/
+.fastembed_cache/
+
+# Claude Code
+.claude/
