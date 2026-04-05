@@ -18,11 +18,25 @@ export interface Event {
   id: number;
   title: string;
   description: string | null;
+  short_description: string | null;
   image_url: string | null;
   source_url: string | null;
   start_date: string;
   end_date: string | null;
+  is_featured: boolean;
   created_at: string;
   category: Category | null;
   venue: Venue | null;
+}
+
+export interface DigestSummary {
+  id: number;
+  subject: string;
+  intro_text: string;
+  event_count: number;
+  sent_at: string;
+}
+
+export interface DigestDetail extends DigestSummary {
+  html_content: string;
 }

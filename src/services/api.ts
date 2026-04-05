@@ -1,4 +1,4 @@
-import type { Event, Venue, Category } from "../types";
+import type { Event, Venue, Category, DigestSummary, DigestDetail } from "../types";
 
 const API_BASE = "http://localhost:8000";
 
@@ -38,6 +38,14 @@ export async function getVenues(venue_type?: string): Promise<Venue[]> {
 
 export async function getCategories(): Promise<Category[]> {
   return fetchJson<Category[]>(`${API_BASE}/categories`);
+}
+
+export async function getDigests(): Promise<DigestSummary[]> {
+  return fetchJson<DigestSummary[]>(`${API_BASE}/digests/`);
+}
+
+export async function getDigest(id: number): Promise<DigestDetail> {
+  return fetchJson<DigestDetail>(`${API_BASE}/digests/${id}`);
 }
 
 export async function subscribe(email: string, name?: string): Promise<void> {

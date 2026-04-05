@@ -1,8 +1,47 @@
 @import "tailwindcss";
 
+@theme {
+  /* Core palette */
+  --color-navy: #1B2A4A;
+  --color-navy-light: #2E4268;
+  --color-warm-gray: #F5F3F0;
+  --color-stone: #E8E4DF;
+  --color-coral: #E85D4A;
+  --color-coral-dark: #D14A38;
+  --color-divider: #E0DCD7;
+
+  /* Text */
+  --color-text-primary: #1B2A4A;
+  --color-text-secondary: #5A6578;
+  --color-text-muted: #8E95A2;
+
+  /* Semantic */
+  --color-success: #2D8A56;
+  --color-warning: #D4930D;
+  --color-error: #C93B3B;
+  --color-info: #3B7FC9;
+
+  /* Category colors */
+  --color-cat-music: #3B7FC9;
+  --color-cat-food: #D4930D;
+  --color-cat-food-text: #B07A00;
+  --color-cat-family: #2D8A56;
+  --color-cat-arts: #8B5CC2;
+  --color-cat-sports: #E85D4A;
+  --color-cat-outdoors: #1A9E8F;
+  --color-cat-festivals: #C944A0;
+  --color-cat-nightlife: #5B5EE6;
+
+  /* Fonts */
+  --font-heading: 'DM Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body: Inter, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
+  background-color: var(--color-warm-gray);
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
