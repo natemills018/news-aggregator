@@ -83,7 +83,7 @@ def _category_badge_html(category_name: str) -> str:
     )
 
 
-def build_digest_html(events: list[Event], intro: str = "") -> str:
+def build_digest_html(events: list[Event], intro: str = "", subscriber_email: str = "") -> str:
     """Build the weekly digest HTML email matching the CLE Brief design system."""
     if not events:
         return _wrap_email("<p style='color:#5A6578;text-align:center;padding:32px 0;'>No upcoming events this week. Check back soon!</p>", intro)
@@ -130,12 +130,25 @@ def build_digest_html(events: list[Event], intro: str = "") -> str:
         for e in radar:
             sections.append(_build_radar_item_html(e))
 
-    return _wrap_email("\n".join(sections), intro)
+    return _wrap_email("\n".join(sections), intro, subscriber_email)
 
 
-def _wrap_email(content: str, intro: str = "") -> str:
+def _wrap_email(content: str, intro: str = "", subscriber_email: str = "") -> str:
+    import os
+    from urllib.parse import quote
+
     if not intro:
         intro = "Here's what's worth checking out in Cleveland this week."
+
+    base_url = os.getenv("BASE_URL", "http://localhost:8000")
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+    if subscriber_email:
+        unsubscribe_url = f"{base_url}/subscribers/unsubscribe?email={quote(subscriber_email)}"
+    else:
+        unsubscribe_url = "#"
+
+    share_url = f"mailto:?subject=Check%20out%20The%20CLE%20Brief&body=I%20found%20this%20great%20Cleveland%20events%20newsletter%3A%20{quote(frontend_url)}"
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -195,9 +208,9 @@ def _wrap_email(content: str, intro: str = "") -> str:
         Made in Cleveland
     </p>
     <p style="font-family:Inter,-apple-system,sans-serif;font-size:12px;margin:0;">
-        <a href="{{{{unsubscribe_url}}}}" style="color:rgba(255,255,255,0.5);text-decoration:underline;">Unsubscribe</a>
+        <a href="{unsubscribe_url}" style="color:rgba(255,255,255,0.5);text-decoration:underline;">Unsubscribe</a>
         <span style="color:rgba(255,255,255,0.3);"> &middot; </span>
-        <a href="{{{{share_url}}}}" style="color:rgba(255,255,255,0.5);text-decoration:underline;">Share with a friend</a>
+        <a href="{share_url}" style="color:rgba(255,255,255,0.5);text-decoration:underline;">Share with a friend</a>
     </p>
 </td>
 </tr>

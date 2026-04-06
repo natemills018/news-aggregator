@@ -61,24 +61,24 @@ const Admin = () => {
   if (!authenticated) {
     return (
       <div className="max-w-md mx-auto px-4 py-20">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin</h2>
-        <p className="text-gray-500 mb-6">Enter your admin key to continue.</p>
+        <h2 className="text-2xl font-bold text-navy mb-2 font-heading">Admin</h2>
+        <p className="text-text-muted mb-6">Enter your admin key to continue.</p>
         <form onSubmit={handleLogin} className="flex flex-col gap-3">
           <input
             type="password"
             placeholder="Admin API Key"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            className="px-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            className="px-4 py-2.5 rounded-lg border border-stone text-sm focus:outline-none focus:ring-2 focus:ring-coral focus:border-transparent"
           />
           <button
             type="submit"
-            className="px-5 py-2.5 bg-orange-600 text-white font-medium rounded-lg text-sm hover:bg-orange-700 transition-colors cursor-pointer"
+            className="px-5 py-2.5 bg-coral text-white font-medium rounded-lg text-sm hover:bg-coral-dark transition-colors cursor-pointer"
           >
             Log In
           </button>
           {authError && (
-            <p className="text-red-600 text-sm">Invalid admin key.</p>
+            <p className="text-error text-sm">Invalid admin key.</p>
           )}
         </form>
       </div>
@@ -88,11 +88,11 @@ const Admin = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
+        <h2 className="text-2xl font-bold text-navy font-heading">Admin Dashboard</h2>
         <button
           onClick={refreshData}
           disabled={loading}
-          className="px-4 py-2 text-sm text-orange-600 border border-orange-600 rounded-lg hover:bg-orange-50 transition-colors cursor-pointer disabled:opacity-50"
+          className="px-4 py-2 text-sm text-coral border border-coral rounded-lg hover:bg-coral/10 transition-colors cursor-pointer disabled:opacity-50"
         >
           {loading ? "Refreshing..." : "Refresh"}
         </button>
@@ -101,17 +101,17 @@ const Admin = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <div className="bg-white rounded-lg shadow p-5">
-          <p className="text-sm text-gray-500 mb-1">Verified Subscribers</p>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-sm text-text-muted mb-1">Verified Subscribers</p>
+          <p className="text-3xl font-bold text-navy">
             {subscriberCount ?? "—"}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-5">
-          <p className="text-sm text-gray-500 mb-1">Send Digest</p>
+          <p className="text-sm text-text-muted mb-1">Send Digest</p>
           <button
             onClick={handleSend}
             disabled={sending}
-            className="mt-1 px-5 py-2.5 bg-orange-600 text-white font-medium rounded-lg text-sm hover:bg-orange-700 transition-colors cursor-pointer disabled:opacity-50"
+            className="mt-1 px-5 py-2.5 bg-coral text-white font-medium rounded-lg text-sm hover:bg-coral-dark transition-colors cursor-pointer disabled:opacity-50"
           >
             {sending ? "Sending..." : "Send Weekly Digest Now"}
           </button>
@@ -121,15 +121,15 @@ const Admin = () => {
       {/* Send result */}
       {sendResult && (
         <div className={`rounded-lg p-4 mb-8 ${sendResult.errors.length > 0 && sendResult.sent === 0 ? "bg-red-50 border border-red-200" : "bg-green-50 border border-green-200"}`}>
-          <p className="font-medium text-gray-900">
+          <p className="font-medium text-navy">
             Sent to {sendResult.sent} of {sendResult.total_subscribers} subscribers
             ({sendResult.events_included} events included)
           </p>
           {sendResult.errors.length > 0 && (
             <div className="mt-2">
-              <p className="text-sm text-red-600 font-medium">Errors:</p>
+              <p className="text-sm text-error font-medium">Errors:</p>
               {sendResult.errors.map((err, i) => (
-                <p key={i} className="text-sm text-red-600">
+                <p key={i} className="text-sm text-error">
                   {err.email}: {err.error}
                 </p>
               ))}
@@ -140,7 +140,7 @@ const Admin = () => {
 
       {/* Digest preview */}
       <div className="mb-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-3">
+        <h3 className="text-lg font-bold text-navy mb-3 font-heading">
           Digest Preview
         </h3>
         <div className="bg-white rounded-lg shadow overflow-hidden">

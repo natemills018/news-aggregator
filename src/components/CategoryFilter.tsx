@@ -16,8 +16,8 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
       onClick={() => onSelect(null)}
       className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
         selected === null
-          ? "bg-orange-600 text-white"
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          ? "bg-coral text-white"
+          : "bg-stone text-text-secondary hover:bg-divider"
       }`}
     >
       All
@@ -28,8 +28,8 @@ const CategoryFilter: React.FC<CategoryFilterProps> = ({
         onClick={() => onSelect(cat.id)}
         className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
           selected === cat.id
-            ? "bg-orange-600 text-white"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            ? "bg-coral text-white"
+            : "bg-stone text-text-secondary hover:bg-divider"
         }`}
       >
         {cat.name}

@@ -33,7 +33,6 @@ def send_digest(days: int = 7, db: Session = Depends(get_db)):
     """Send the weekly digest to all verified, active subscribers."""
     events = get_upcoming_events(db, days=days)
     intro = "Here's what's worth checking out in Cleveland this week."
-    html = build_digest_html(events, intro=intro)
     plain = build_digest_plain(events, intro=intro)
 
     subject = "The CLE Brief — Your Week in Cleveland"
@@ -48,10 +47,14 @@ def send_digest(days: int = 7, db: Session = Depends(get_db)):
     errors = []
     for sub in subscribers:
         try:
-            send_digest_email(sub.email, html)
+            html = build_digest_html(events, intro=intro, subscriber_email=sub.email)
+            send_digest_email(sub.email, subject, html)
             sent_count += 1
         except Exception as e:
             errors.append({"email": sub.email, "error": str(e)})
+
+    # Build a generic version for archiving
+    html = build_digest_html(events, intro=intro)
 
     # Archive the digest
     featured = next((e for e in events if e.is_featured), events[0] if events else None)

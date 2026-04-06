@@ -50,7 +50,7 @@ const SubscribeForm: React.FC<SubscribeFormProps> = ({ compact = false }) => {
           placeholder="you@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="px-4 py-3 rounded-md border border-stone text-base font-body text-text-primary flex-1 focus:outline-none focus:border-navy focus:ring-2 focus:ring-navy/20 placeholder:text-text-muted"
+          className="px-4 py-3 rounded-md border border-stone text-base font-body text-navy bg-white flex-1 focus:outline-none focus:border-coral focus:ring-2 focus:ring-coral/20 placeholder:text-text-muted"
         />
         <button
           type="submit"
