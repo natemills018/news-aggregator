@@ -24,6 +24,8 @@ export interface Event {
   start_date: string;
   end_date: string | null;
   is_featured: boolean;
+  status: string;
+  source: string | null;
   created_at: string;
   category: Category | null;
   venue: Venue | null;

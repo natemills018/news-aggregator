@@ -12,7 +12,7 @@ def get_upcoming_events(db: Session, days: int = 7) -> list[Event]:
     return (
         db.query(Event)
         .options(joinedload(Event.category), joinedload(Event.venue))
-        .filter(Event.start_date >= now, Event.start_date <= cutoff)
+        .filter(Event.start_date >= now, Event.start_date <= cutoff, Event.status == "approved")
         .order_by(Event.is_featured.desc(), Event.start_date)
         .all()
     )

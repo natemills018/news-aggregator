@@ -22,6 +22,7 @@ def list_events(
     db: Session = Depends(get_db),
 ):
     query = db.query(Event).options(joinedload(Event.category), joinedload(Event.venue))
+    query = query.filter(Event.status == "approved")
 
     if search:
         query = query.filter(Event.title.ilike(f"%{search}%"))
