@@ -6,19 +6,16 @@ from app.auth import require_admin
 from app.models import Event, Category, Venue
 from app.schemas import EventCreate, EventRead, EventUpdate
 from app.services.ticketmaster import fetch_cleveland_events as fetch_ticketmaster
-from app.services.eventbrite import fetch_cleveland_events as fetch_eventbrite
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
 
 @router.post("/fetch-events")
 def fetch_events(days: int = 14, db: Session = Depends(get_db)):
-    """Fetch events from Ticketmaster and Eventbrite into the draft queue."""
+    """Fetch events from Ticketmaster into the draft queue."""
     tm_result = fetch_ticketmaster(db, days=days)
-    eb_result = fetch_eventbrite(db, days=days)
     return {
         "ticketmaster": tm_result,
-        "eventbrite": eb_result,
     }
 
 

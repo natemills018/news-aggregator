@@ -9,8 +9,11 @@ from app.models import Event, Category, Venue
 TICKETMASTER_API_KEY = os.getenv("TICKETMASTER_API_KEY", "")
 BASE_URL = "https://app.ticketmaster.com/discovery/v2"
 
-# Cleveland DMA ID: 510
-CLEVELAND_DMA_ID = "510"
+# Cleveland coordinates + radius (matches Eventbrite approach)
+CLEVELAND_LAT = "41.4993"
+CLEVELAND_LON = "-81.6944"
+SEARCH_RADIUS = "30"
+SEARCH_UNIT = "miles"
 
 # Map Ticketmaster genre names to our category slugs
 GENRE_MAP = {
@@ -38,7 +41,9 @@ def fetch_cleveland_events(db: Session, days: int = 14) -> dict:
 
     params = {
         "apikey": TICKETMASTER_API_KEY,
-        "dmaId": CLEVELAND_DMA_ID,
+        "latlong": f"{CLEVELAND_LAT},{CLEVELAND_LON}",
+        "radius": SEARCH_RADIUS,
+        "unit": SEARCH_UNIT,
         "startDateTime": start,
         "endDateTime": end,
         "size": 50,
