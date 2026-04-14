@@ -1,21 +1,68 @@
-from fastapi import APIRouter, Depends, HTTPException
+from datetime import datetime
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
-from app.db import get_db
+from app.db import SessionLocal, get_db
 from app.auth import require_admin
-from app.models import Event, Category, Venue
+from app.models import Event, Category, Venue, FetchJob
 from app.schemas import EventCreate, EventRead, EventUpdate
 from app.services.ticketmaster import fetch_cleveland_events as fetch_ticketmaster
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
 
+def _run_ticketmaster_fetch(job_id: int) -> None:
+    """Run the Ticketmaster fetch in the background and update the job row."""
+    db = SessionLocal()
+    try:
+        job = db.query(FetchJob).filter(FetchJob.id == job_id).first()
+        if not job:
+            return
+        try:
+            result = fetch_ticketmaster(db, days=14)
+            if result.get("error"):
+                job.status = "error"
+                job.error = result["error"]
+            else:
+                job.status = "done"
+                job.fetched = result.get("fetched", 0)
+                job.duplicates = result.get("duplicates", 0)
+        except Exception as exc:
+            job.status = "error"
+            job.error = str(exc)
+        job.finished_at = datetime.utcnow()
+        db.commit()
+    finally:
+        db.close()
+
+
 @router.post("/fetch-events")
-def fetch_events(days: int = 14, db: Session = Depends(get_db)):
-    """Fetch events from Ticketmaster into the draft queue."""
-    tm_result = fetch_ticketmaster(db, days=days)
+def fetch_events(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Kick off a Ticketmaster fetch in the background. Returns a job id to poll."""
+    job = FetchJob(status="running", source="ticketmaster")
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    background_tasks.add_task(_run_ticketmaster_fetch, job.id)
+    return {"job_id": job.id, "status": job.status}
+
+
+@router.get("/fetch-events/{job_id}")
+def get_fetch_job(job_id: int, db: Session = Depends(get_db)):
+    """Check the status of a background fetch job."""
+    job = db.query(FetchJob).filter(FetchJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
     return {
-        "ticketmaster": tm_result,
+        "job_id": job.id,
+        "status": job.status,
+        "source": job.source,
+        "fetched": job.fetched,
+        "duplicates": job.duplicates,
+        "error": job.error,
+        "started_at": job.started_at.isoformat() if job.started_at else None,
+        "finished_at": job.finished_at.isoformat() if job.finished_at else None,
     }
 
 

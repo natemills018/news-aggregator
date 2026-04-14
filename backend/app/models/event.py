@@ -20,7 +20,7 @@ class Event(Base):
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(20), default="approved", nullable=False)  # draft, approved, skipped
     external_id: Mapped[str | None] = mapped_column(String(200), nullable=True, unique=True)  # for deduplication
-    source: Mapped[str | None] = mapped_column(String(50), nullable=True)  # ticketmaster, eventbrite, manual
+    source: Mapped[str | None] = mapped_column(String(50), nullable=True)  # ticketmaster, manual
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     category_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("categories.id"), nullable=True)

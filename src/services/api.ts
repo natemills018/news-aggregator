@@ -96,12 +96,29 @@ export async function sendDigest(apiKey: string): Promise<{
 
 // Event curation endpoints
 
-export async function fetchExternalEvents(apiKey: string): Promise<{
-  ticketmaster: { fetched: number; duplicates: number; error?: string };
-  eventbrite: { fetched: number; duplicates: number; error?: string };
-}> {
+export interface FetchJobStatus {
+  job_id: number;
+  status: "running" | "done" | "error";
+  source: string;
+  fetched: number;
+  duplicates: number;
+  error: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+}
+
+export async function startFetchJob(apiKey: string): Promise<{ job_id: number; status: string }> {
   const res = await fetch(`${API_BASE}/admin/fetch-events`, {
     method: "POST",
+    headers: adminHeaders(apiKey),
+  });
+  if (res.status === 403) throw new Error("invalid_key");
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
+export async function getFetchJob(apiKey: string, jobId: number): Promise<FetchJobStatus> {
+  const res = await fetch(`${API_BASE}/admin/fetch-events/${jobId}`, {
     headers: adminHeaders(apiKey),
   });
   if (res.status === 403) throw new Error("invalid_key");

@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine, SessionLocal
+from app.models import FetchJob
 from app.routers import events, venues, categories, subscribers, newsletter, digests, admin
 from app.seed import seed_data
 
@@ -15,6 +17,14 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_data(db)
+        # Any job still marked "running" at startup is orphaned from a prior process.
+        stale = db.query(FetchJob).filter(FetchJob.status == "running").all()
+        for job in stale:
+            job.status = "error"
+            job.error = "Backend restarted before fetch completed"
+            job.finished_at = datetime.utcnow()
+        if stale:
+            db.commit()
     finally:
         db.close()
     yield

@@ -3,7 +3,8 @@ import {
   getSubscribers,
   getDigestPreview,
   sendDigest,
-  fetchExternalEvents,
+  startFetchJob,
+  getFetchJob,
   getDraftEvents,
   getAdminEvents,
   updateEvent,
@@ -35,10 +36,10 @@ const Admin = () => {
   const [approved, setApproved] = useState<Event[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [fetching, setFetching] = useState(false);
-  const [fetchResult, setFetchResult] = useState<{
-    ticketmaster: { fetched: number; duplicates: number; error?: string };
-    eventbrite: { fetched: number; duplicates: number; error?: string };
-  } | null>(null);
+  const [fetchResult, setFetchResult] = useState<
+    | { fetched: number; duplicates: number; error?: string }
+    | null
+  >(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<Event>>({});
 
@@ -92,11 +93,25 @@ const Admin = () => {
     setFetching(true);
     setFetchResult(null);
     try {
-      const result = await fetchExternalEvents(apiKey);
-      setFetchResult(result);
+      const { job_id } = await startFetchJob(apiKey);
+      // Poll every 1.5s until the job finishes or errors
+      while (true) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const status = await getFetchJob(apiKey, job_id);
+        if (status.status === "done") {
+          setFetchResult({ fetched: status.fetched, duplicates: status.duplicates });
+          break;
+        }
+        if (status.status === "error") {
+          setFetchResult({ fetched: 0, duplicates: 0, error: status.error || "Fetch failed" });
+          break;
+        }
+      }
       const d = await getDraftEvents(apiKey);
       setDrafts(d);
-    } catch {}
+    } catch {
+      setFetchResult({ fetched: 0, duplicates: 0, error: "Could not start fetch" });
+    }
     setFetching(false);
   };
 
@@ -240,33 +255,48 @@ const Admin = () => {
             <button
               onClick={handleFetch}
               disabled={fetching}
-              className="px-5 py-2.5 bg-navy text-white font-medium rounded-lg text-sm hover:bg-navy-light transition-colors cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 bg-navy text-white font-medium rounded-lg text-sm hover:bg-navy-light transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {fetching ? "Fetching..." : "Fetch Events"}
+              {fetching ? "Fetching…" : "Fetch Events"}
             </button>
-            <span className="text-sm text-text-muted">Pull from Ticketmaster & Eventbrite</span>
+            <span className="text-sm text-text-muted">Pull from Ticketmaster</span>
           </div>
 
-          {fetchResult && (
+          {fetching && (
+            <div
+              className="bg-white rounded-lg border border-stone p-4 mb-4 flex items-center gap-3"
+              role="status"
+              aria-live="polite"
+            >
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-coral opacity-60 animate-ping" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-coral" />
+              </span>
+              <p className="text-sm text-navy">
+                Compiling events from <strong>Ticketmaster</strong>
+                <span className="inline-flex gap-0.5 ml-1" aria-hidden="true">
+                  <span className="inline-block w-1 h-1 rounded-full bg-navy animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="inline-block w-1 h-1 rounded-full bg-navy animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="inline-block w-1 h-1 rounded-full bg-navy animate-bounce" style={{ animationDelay: "300ms" }} />
+                </span>
+              </p>
+            </div>
+          )}
+
+          {fetchResult && !fetching && (
             <div className="bg-white rounded-lg border border-stone p-4 mb-4 text-sm">
               <p>
                 <strong>Ticketmaster:</strong>{" "}
-                {fetchResult.ticketmaster.error
-                  ? <span className="text-error">{fetchResult.ticketmaster.error}</span>
-                  : `${fetchResult.ticketmaster.fetched} new, ${fetchResult.ticketmaster.duplicates} duplicates`}
-              </p>
-              <p>
-                <strong>Eventbrite:</strong>{" "}
-                {fetchResult.eventbrite.error
-                  ? <span className="text-error">{fetchResult.eventbrite.error}</span>
-                  : `${fetchResult.eventbrite.fetched} new, ${fetchResult.eventbrite.duplicates} duplicates`}
+                {fetchResult.error
+                  ? <span className="text-error">{fetchResult.error}</span>
+                  : `${fetchResult.fetched} new, ${fetchResult.duplicates} duplicates`}
               </p>
             </div>
           )}
 
           {drafts.length === 0 ? (
             <p className="text-text-muted text-sm py-8 text-center">
-              No draft events. Click "Fetch Events" to pull from APIs.
+              No draft events. Click "Fetch Events" to pull from Ticketmaster.
             </p>
           ) : (
             <div className="space-y-3">
@@ -306,7 +336,20 @@ const Admin = () => {
                   ) : (
                     /* View mode */
                     <div>
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        {event.image_url ? (
+                          <img
+                            src={event.image_url}
+                            alt=""
+                            loading="lazy"
+                            className="w-20 h-20 rounded-md object-cover border border-stone shrink-0"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                          />
+                        ) : (
+                          <div className="w-20 h-20 rounded-md bg-warm-gray border border-stone shrink-0 flex items-center justify-center text-text-muted text-xs">
+                            No image
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             {event.category && (
