@@ -73,13 +73,26 @@ export async function getSubscribers(apiKey: string) {
   return res.json();
 }
 
-export async function getDigestPreview(apiKey: string): Promise<string> {
-  const res = await fetch(`${API_BASE}/newsletter/preview`);
+export interface DigestOptions {
+  tagline?: string;
+  editors_note?: string;
+  intro?: string;
+  days?: number;
+}
+
+export async function getDigestPreview(_apiKey: string, opts: DigestOptions = {}): Promise<string> {
+  const params = new URLSearchParams();
+  if (opts.days !== undefined) params.set("days", String(opts.days));
+  if (opts.intro) params.set("intro", opts.intro);
+  if (opts.tagline) params.set("tagline", opts.tagline);
+  if (opts.editors_note) params.set("editors_note", opts.editors_note);
+  const qs = params.toString();
+  const res = await fetch(`${API_BASE}/newsletter/preview${qs ? `?${qs}` : ""}`);
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.text();
 }
 
-export async function sendDigest(apiKey: string): Promise<{
+export async function sendDigest(apiKey: string, opts: DigestOptions = {}): Promise<{
   sent: number;
   total_subscribers: number;
   events_included: number;
@@ -87,7 +100,13 @@ export async function sendDigest(apiKey: string): Promise<{
 }> {
   const res = await fetch(`${API_BASE}/newsletter/send`, {
     method: "POST",
-    headers: adminHeaders(apiKey),
+    headers: { ...adminHeaders(apiKey), "Content-Type": "application/json" },
+    body: JSON.stringify({
+      days: opts.days ?? 7,
+      intro: opts.intro ?? "",
+      tagline: opts.tagline ?? "",
+      editors_note: opts.editors_note ?? "",
+    }),
   });
   if (res.status === 403) throw new Error("invalid_key");
   if (!res.ok) throw new Error(`API error: ${res.status}`);

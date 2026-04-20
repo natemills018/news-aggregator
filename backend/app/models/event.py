@@ -18,6 +18,7 @@ class Event(Base):
     start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     end_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_sleeper_pick: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, server_default="false")
     status: Mapped[str] = mapped_column(String(20), default="approved", nullable=False)  # draft, approved, skipped
     external_id: Mapped[str | None] = mapped_column(String(200), nullable=True, unique=True)  # for deduplication
     source: Mapped[str | None] = mapped_column(String(50), nullable=True)  # ticketmaster, manual

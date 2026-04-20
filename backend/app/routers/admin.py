@@ -100,6 +100,10 @@ def update_event(event_id: int, payload: EventUpdate, db: Session = Depends(get_
     if update_data.get("is_featured"):
         db.query(Event).filter(Event.is_featured == True, Event.id != event_id).update({"is_featured": False})
 
+    # Only one sleeper pick at a time
+    if update_data.get("is_sleeper_pick"):
+        db.query(Event).filter(Event.is_sleeper_pick == True, Event.id != event_id).update({"is_sleeper_pick": False})
+
     for key, value in update_data.items():
         setattr(event, key, value)
 

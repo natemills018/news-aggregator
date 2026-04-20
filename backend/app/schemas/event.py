@@ -15,6 +15,7 @@ class EventCreate(BaseModel):
     start_date: datetime
     end_date: datetime | None = None
     is_featured: bool = False
+    is_sleeper_pick: bool = False
     status: str = "approved"
     category_id: int | None = None
     venue_id: int | None = None
@@ -29,6 +30,7 @@ class EventUpdate(BaseModel):
     start_date: datetime | None = None
     end_date: datetime | None = None
     is_featured: bool | None = None
+    is_sleeper_pick: bool | None = None
     status: str | None = None
     category_id: int | None = None
     venue_id: int | None = None
@@ -44,6 +46,7 @@ class EventRead(BaseModel):
     start_date: datetime
     end_date: datetime | None
     is_featured: bool
+    is_sleeper_pick: bool
     status: str
     source: str | None
     created_at: datetime

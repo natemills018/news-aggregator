@@ -2,6 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -14,26 +15,49 @@ from app.services.email import send_digest_email
 router = APIRouter(prefix="/newsletter", tags=["newsletter"])
 
 
+class DigestSendPayload(BaseModel):
+    days: int = 7
+    intro: str = ""
+    tagline: str = ""
+    editors_note: str = ""
+
+
 @router.get("/preview", response_class=HTMLResponse)
-def preview_digest(days: int = 7, db: Session = Depends(get_db)):
+def preview_digest(
+    days: int = 7,
+    intro: str = "",
+    tagline: str = "",
+    editors_note: str = "",
+    db: Session = Depends(get_db),
+):
     """Preview the weekly digest as rendered HTML."""
     events = get_upcoming_events(db, days=days)
-    return build_digest_html(events)
+    return build_digest_html(events, intro=intro, tagline=tagline, editors_note=editors_note)
 
 
 @router.get("/preview/text")
-def preview_digest_text(days: int = 7, db: Session = Depends(get_db)):
+def preview_digest_text(
+    days: int = 7,
+    intro: str = "",
+    tagline: str = "",
+    editors_note: str = "",
+    db: Session = Depends(get_db),
+):
     """Preview the weekly digest as plain text."""
     events = get_upcoming_events(db, days=days)
-    return {"text": build_digest_plain(events)}
+    return {"text": build_digest_plain(events, intro=intro, tagline=tagline, editors_note=editors_note)}
 
 
 @router.post("/send", dependencies=[Depends(require_admin)])
-def send_digest(days: int = 7, db: Session = Depends(get_db)):
+def send_digest(payload: DigestSendPayload | None = None, db: Session = Depends(get_db)):
     """Send the weekly digest to all verified, active subscribers."""
-    events = get_upcoming_events(db, days=days)
-    intro = "Here's what's worth checking out in Cleveland this week."
-    plain = build_digest_plain(events, intro=intro)
+    payload = payload or DigestSendPayload()
+    intro = payload.intro.strip() or "Here's what's worth checking out in Cleveland this week."
+    tagline = payload.tagline.strip()
+    editors_note = payload.editors_note.strip()
+
+    events = get_upcoming_events(db, days=payload.days)
+    plain = build_digest_plain(events, intro=intro, tagline=tagline, editors_note=editors_note)
 
     subject = "The CLE Brief — Your Week in Cleveland"
 
@@ -47,16 +71,21 @@ def send_digest(days: int = 7, db: Session = Depends(get_db)):
     errors = []
     for sub in subscribers:
         try:
-            html = build_digest_html(events, intro=intro, subscriber_email=sub.email)
+            html = build_digest_html(
+                events,
+                intro=intro,
+                tagline=tagline,
+                editors_note=editors_note,
+                subscriber_email=sub.email,
+            )
             send_digest_email(sub.email, subject, html)
             sent_count += 1
         except Exception as e:
             errors.append({"email": sub.email, "error": str(e)})
 
-    # Build a generic version for archiving
-    html = build_digest_html(events, intro=intro)
+    # Generic archive version (no per-subscriber unsubscribe link)
+    html = build_digest_html(events, intro=intro, tagline=tagline, editors_note=editors_note)
 
-    # Archive the digest
     featured = next((e for e in events if e.is_featured), events[0] if events else None)
     digest = Digest(
         sent_at=datetime.utcnow(),

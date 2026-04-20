@@ -43,6 +43,11 @@ const Admin = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<Event>>({});
 
+  // Digest editorial fields
+  const [digestTagline, setDigestTagline] = useState("");
+  const [digestEditorsNote, setDigestEditorsNote] = useState("");
+  const [previewRefreshing, setPreviewRefreshing] = useState(false);
+
   // Create event form
   const [createForm, setCreateForm] = useState({
     title: "",
@@ -130,6 +135,23 @@ const Admin = () => {
     loadData();
   };
 
+  const handleSleeper = async (id: number, sleeper: boolean) => {
+    await updateEvent(apiKey, id, { is_sleeper_pick: sleeper } as Partial<Event>);
+    loadData();
+  };
+
+  const refreshPreview = async () => {
+    setPreviewRefreshing(true);
+    try {
+      const html = await getDigestPreview(apiKey, {
+        tagline: digestTagline,
+        editors_note: digestEditorsNote,
+      });
+      setPreviewHtml(html);
+    } catch {}
+    setPreviewRefreshing(false);
+  };
+
   const handleDelete = async (id: number) => {
     if (!confirm("Delete this event permanently?")) return;
     await deleteEvent(apiKey, id);
@@ -181,7 +203,10 @@ const Admin = () => {
     setSending(true);
     setSendResult(null);
     try {
-      const result = await sendDigest(apiKey);
+      const result = await sendDigest(apiKey, {
+        tagline: digestTagline,
+        editors_note: digestEditorsNote,
+      });
       setSendResult(result);
     } catch {
       setSendResult({ sent: 0, total_subscribers: 0, events_included: 0, errors: [{ email: "", error: "Failed to send" }] });
@@ -387,7 +412,7 @@ const Admin = () => {
           ) : (
             <div className="space-y-3">
               {approved.map((event) => (
-                <div key={event.id} className={`bg-white rounded-lg border p-4 ${event.is_featured ? "border-coral border-2" : "border-stone"}`}>
+                <div key={event.id} className={`bg-white rounded-lg border p-4 ${event.is_featured ? "border-coral border-2" : event.is_sleeper_pick ? "border-navy border-2" : "border-stone"}`}>
                   {editingId === event.id ? (
                     <div className="space-y-3">
                       <input
@@ -424,6 +449,9 @@ const Admin = () => {
                           {event.is_featured && (
                             <span className="text-xs font-bold text-coral">★ FEATURED</span>
                           )}
+                          {event.is_sleeper_pick && (
+                            <span className="text-xs font-bold text-navy">💤 SLEEPER</span>
+                          )}
                           {event.category && (
                             <span className="text-xs font-semibold uppercase tracking-wide text-coral bg-coral/10 px-2 py-0.5 rounded">
                               {event.category.name}
@@ -445,6 +473,17 @@ const Admin = () => {
                           }`}
                         >
                           {event.is_featured ? "★ Featured" : "☆ Feature"}
+                        </button>
+                        <button
+                          onClick={() => handleSleeper(event.id, !event.is_sleeper_pick)}
+                          title="Sleeper pick — the editor's underrated call"
+                          className={`px-3 py-1.5 text-xs font-medium rounded cursor-pointer ${
+                            event.is_sleeper_pick
+                              ? "bg-navy text-white"
+                              : "bg-warm-gray text-text-secondary hover:bg-stone"
+                          }`}
+                        >
+                          {event.is_sleeper_pick ? "💤 Sleeper" : "💤 Sleeper"}
                         </button>
                         <button onClick={() => startEdit(event)} className="px-3 py-1.5 bg-warm-gray text-text-secondary text-xs font-medium rounded hover:bg-stone cursor-pointer">Edit</button>
                         <button onClick={() => handleDelete(event.id)} className="px-3 py-1.5 bg-warm-gray text-error text-xs font-medium rounded hover:bg-red-50 cursor-pointer">Delete</button>
@@ -602,6 +641,40 @@ const Admin = () => {
               )}
             </div>
           )}
+
+          {/* Editorial fields */}
+          <div className="bg-white rounded-lg border border-stone p-4 mb-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-navy mb-1">
+                Tagline <span className="text-text-muted font-normal">(rotates in header)</span>
+              </label>
+              <input
+                value={digestTagline}
+                onChange={(e) => setDigestTagline(e.target.value)}
+                className="w-full px-3 py-2 border border-stone rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-coral/20"
+                placeholder="Patio season is here and we're not mad about it"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-navy mb-1">
+                Editor's Note <span className="text-text-muted font-normal">(2-3 sentences, casual first-person)</span>
+              </label>
+              <textarea
+                value={digestEditorsNote}
+                onChange={(e) => setDigestEditorsNote(e.target.value)}
+                className="w-full px-3 py-2 border border-stone rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-coral/20"
+                placeholder="Spring finally showed up. Here's what to do before it changes its mind."
+                rows={3}
+              />
+            </div>
+            <button
+              onClick={refreshPreview}
+              disabled={previewRefreshing}
+              className="px-4 py-2 bg-navy text-white text-sm font-medium rounded-lg hover:bg-navy-light transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {previewRefreshing ? "Refreshing…" : "Refresh Preview"}
+            </button>
+          </div>
 
           <h3 className="text-lg font-bold text-navy mb-3 font-heading">Digest Preview</h3>
           <div className="bg-white rounded-lg shadow overflow-hidden">

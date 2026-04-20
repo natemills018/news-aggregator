@@ -24,6 +24,7 @@ export interface Event {
   start_date: string;
   end_date: string | null;
   is_featured: boolean;
+  is_sleeper_pick: boolean;
   status: string;
   source: string | null;
   created_at: string;

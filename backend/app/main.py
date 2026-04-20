@@ -3,6 +3,7 @@ from datetime import datetime
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.db import Base, engine, SessionLocal
 from app.models import FetchJob
@@ -10,10 +11,23 @@ from app.routers import events, venues, categories, subscribers, newsletter, dig
 from app.seed import seed_data
 
 
+def _apply_lightweight_migrations() -> None:
+    """Add columns to existing tables that create_all can't evolve.
+
+    Keeps dev schema in sync without an Alembic setup — each statement is
+    idempotent via IF NOT EXISTS so restarts are safe.
+    """
+    with engine.begin() as conn:
+        conn.execute(text(
+            "ALTER TABLE events ADD COLUMN IF NOT EXISTS is_sleeper_pick BOOLEAN NOT NULL DEFAULT FALSE"
+        ))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables and seed on startup
     Base.metadata.create_all(bind=engine)
+    _apply_lightweight_migrations()
     db = SessionLocal()
     try:
         seed_data(db)
