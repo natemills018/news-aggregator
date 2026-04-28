@@ -11,7 +11,7 @@ class FetchJob(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     status: Mapped[str] = mapped_column(String(20), default="running", nullable=False)  # running, done, error
-    source: Mapped[str] = mapped_column(String(50), nullable=False)  # ticketmaster
+    source: Mapped[str] = mapped_column(String(50), nullable=False)  # spoonacular
     fetched: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     duplicates: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)

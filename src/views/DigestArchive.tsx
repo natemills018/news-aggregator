@@ -55,7 +55,7 @@ const DigestArchive = () => {
                 {digest.intro_text}
               </p>
               <p className="text-xs text-text-muted mt-2">
-                {digest.event_count} events
+                {digest.item_count} items
               </p>
             </Link>
           ))}

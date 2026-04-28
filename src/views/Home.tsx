@@ -79,7 +79,7 @@ const Home = () => {
             </h2>
             <p className="text-text-secondary mb-4">{latestDigest.intro_text}</p>
             <p className="text-sm text-text-muted mb-4">
-              {latestDigest.event_count} events &middot;{" "}
+              {latestDigest.item_count} items &middot;{" "}
               {new Date(latestDigest.sent_at).toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",

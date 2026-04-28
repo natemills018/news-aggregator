@@ -1,4 +1,4 @@
-import type { Event, Venue, Category, DigestSummary, DigestDetail } from "../types";
+import type { DigestSummary, DigestDetail, Subscriber } from "../types";
 
 const API_BASE = "http://localhost:8000";
 
@@ -6,38 +6,6 @@ async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
-}
-
-export async function getEvents(params?: {
-  search?: string;
-  category_id?: number;
-  venue_id?: number;
-  from_date?: string;
-  to_date?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<Event[]> {
-  const searchParams = new URLSearchParams();
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined) searchParams.set(key, String(value));
-    });
-  }
-  const query = searchParams.toString();
-  return fetchJson<Event[]>(`${API_BASE}/events${query ? `?${query}` : ""}`);
-}
-
-export async function getEvent(id: number): Promise<Event> {
-  return fetchJson<Event>(`${API_BASE}/events/${id}`);
-}
-
-export async function getVenues(venue_type?: string): Promise<Venue[]> {
-  const query = venue_type ? `?venue_type=${venue_type}` : "";
-  return fetchJson<Venue[]>(`${API_BASE}/venues${query}`);
-}
-
-export async function getCategories(): Promise<Category[]> {
-  return fetchJson<Category[]>(`${API_BASE}/categories`);
 }
 
 export async function getDigests(): Promise<DigestSummary[]> {
@@ -58,156 +26,12 @@ export async function subscribe(email: string, name?: string): Promise<void> {
   if (!res.ok) throw new Error(`API error: ${res.status}`);
 }
 
-// Admin endpoints
-
 function adminHeaders(apiKey: string) {
   return { "X-Admin-Key": apiKey };
 }
 
-export async function getSubscribers(apiKey: string) {
+export async function getSubscribers(apiKey: string): Promise<Subscriber[]> {
   const res = await fetch(`${API_BASE}/subscribers/`, {
-    headers: adminHeaders(apiKey),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-export interface DigestOptions {
-  tagline?: string;
-  editors_note?: string;
-  intro?: string;
-  days?: number;
-}
-
-export async function getDigestPreview(_apiKey: string, opts: DigestOptions = {}): Promise<string> {
-  const params = new URLSearchParams();
-  if (opts.days !== undefined) params.set("days", String(opts.days));
-  if (opts.intro) params.set("intro", opts.intro);
-  if (opts.tagline) params.set("tagline", opts.tagline);
-  if (opts.editors_note) params.set("editors_note", opts.editors_note);
-  const qs = params.toString();
-  const res = await fetch(`${API_BASE}/newsletter/preview${qs ? `?${qs}` : ""}`);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.text();
-}
-
-export async function sendDigest(apiKey: string, opts: DigestOptions = {}): Promise<{
-  sent: number;
-  total_subscribers: number;
-  events_included: number;
-  errors: { email: string; error: string }[];
-}> {
-  const res = await fetch(`${API_BASE}/newsletter/send`, {
-    method: "POST",
-    headers: { ...adminHeaders(apiKey), "Content-Type": "application/json" },
-    body: JSON.stringify({
-      days: opts.days ?? 7,
-      intro: opts.intro ?? "",
-      tagline: opts.tagline ?? "",
-      editors_note: opts.editors_note ?? "",
-    }),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-// Event curation endpoints
-
-export interface FetchJobStatus {
-  job_id: number;
-  status: "running" | "done" | "error";
-  source: string;
-  fetched: number;
-  duplicates: number;
-  error: string | null;
-  started_at: string | null;
-  finished_at: string | null;
-}
-
-export async function startFetchJob(apiKey: string): Promise<{ job_id: number; status: string }> {
-  const res = await fetch(`${API_BASE}/admin/fetch-events`, {
-    method: "POST",
-    headers: adminHeaders(apiKey),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-export async function getFetchJob(apiKey: string, jobId: number): Promise<FetchJobStatus> {
-  const res = await fetch(`${API_BASE}/admin/fetch-events/${jobId}`, {
-    headers: adminHeaders(apiKey),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-export async function getDraftEvents(apiKey: string): Promise<Event[]> {
-  const res = await fetch(`${API_BASE}/admin/drafts`, {
-    headers: adminHeaders(apiKey),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-export async function getAdminEvents(apiKey: string, status?: string): Promise<Event[]> {
-  const query = status ? `?status=${status}` : "";
-  const res = await fetch(`${API_BASE}/admin/events${query}`, {
-    headers: adminHeaders(apiKey),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-export async function updateEvent(apiKey: string, eventId: number, data: Partial<Event>): Promise<Event> {
-  const res = await fetch(`${API_BASE}/admin/events/${eventId}`, {
-    method: "PATCH",
-    headers: { ...adminHeaders(apiKey), "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-export async function createAdminEvent(apiKey: string, data: {
-  title: string;
-  description?: string;
-  short_description?: string;
-  image_url?: string;
-  source_url?: string;
-  start_date: string;
-  end_date?: string;
-  is_featured?: boolean;
-  status?: string;
-  category_id?: number;
-}): Promise<Event> {
-  const res = await fetch(`${API_BASE}/admin/events`, {
-    method: "POST",
-    headers: { ...adminHeaders(apiKey), "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
-
-export async function deleteEvent(apiKey: string, eventId: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/events/${eventId}`, {
-    method: "DELETE",
-    headers: adminHeaders(apiKey),
-  });
-  if (res.status === 403) throw new Error("invalid_key");
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-}
-
-export async function getAdminCategories(apiKey: string): Promise<Category[]> {
-  const res = await fetch(`${API_BASE}/admin/categories`, {
     headers: adminHeaders(apiKey),
   });
   if (res.status === 403) throw new Error("invalid_key");
