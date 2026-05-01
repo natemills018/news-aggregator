@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import Base, engine, SessionLocal
 from app.models import FetchJob
-from app.routers import subscribers, digests
+from app.routers import subscribers, digests, recipes
 from app.seed import seed_data
 
 
@@ -40,6 +40,8 @@ app.add_middleware(
 
 app.include_router(subscribers.router)
 app.include_router(digests.router)
+app.include_router(recipes.public_router)
+app.include_router(recipes.admin_router)
 
 
 @app.get("/health")
