@@ -18,3 +18,39 @@ export interface Subscriber {
   verified: boolean;
   subscribed_at: string;
 }
+
+export interface Recipe {
+  id: number;
+  external_id: string;
+  source: string;
+  title: string;
+  short_description: string | null;
+  image_url: string | null;
+  source_url: string;
+  source_attribution: string | null;
+  cuisine: string | null;
+  region: string | null;
+  prep_time_minutes: number | null;
+  cook_time_minutes: number | null;
+  difficulty: string | null;
+  rating: number | null;
+  status: string;
+  is_featured: boolean;
+  created_at: string;
+}
+
+export interface RecipeRegion {
+  name: string;
+  cuisines: string[];
+}
+
+export interface FetchJobStatus {
+  job_id: number;
+  status: "running" | "done" | "error";
+  source: string;
+  fetched: number | null;
+  duplicates: number | null;
+  error: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+}
