@@ -4,7 +4,7 @@ import type {
   Subscriber,
   Recipe,
   RecipeRegion,
-  FetchJobStatus,
+  FetchResult,
 } from "../types";
 
 const API_BASE = "http://localhost:8000";
@@ -63,20 +63,16 @@ export async function getRegions(apiKey: string): Promise<RecipeRegion[]> {
   return adminJson<RecipeRegion[]>(`${API_BASE}/admin/regions`, apiKey);
 }
 
-export async function startRecipeFetch(
+export async function fetchRecipes(
   apiKey: string,
   region: string,
   count = 10,
-): Promise<{ job_id: number; status: string; region: string }> {
-  return adminJson(
+): Promise<FetchResult> {
+  return adminJson<FetchResult>(
     `${API_BASE}/admin/fetch-recipes?region=${encodeURIComponent(region)}&count=${count}`,
     apiKey,
     { method: "POST" },
   );
-}
-
-export async function getRecipeFetchJob(apiKey: string, jobId: number): Promise<FetchJobStatus> {
-  return adminJson<FetchJobStatus>(`${API_BASE}/admin/fetch-recipes/${jobId}`, apiKey);
 }
 
 export async function getRecipeDrafts(apiKey: string): Promise<Recipe[]> {

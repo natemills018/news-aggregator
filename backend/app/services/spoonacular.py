@@ -39,6 +39,7 @@ def fetch_recipes_for_region(db: Session, region: str, count: int = 10) -> dict:
         "cuisine": ",".join(cuisines),
         "number": count,
         "addRecipeInformation": "true",
+        "fillIngredients": "true",
         "instructionsRequired": "true",
         "sort": "popularity",
     }
@@ -80,13 +81,22 @@ def fetch_recipes_for_region(db: Session, region: str, count: int = 10) -> dict:
         if isinstance(spoon_score, (int, float)):
             rating = round(spoon_score / 20, 2)  # 0-100 -> 0-5
 
+        full_summary = _strip_html(raw.get("summary"))
+        ingredients = [
+            ing["original"].strip()
+            for ing in (raw.get("extendedIngredients") or [])
+            if isinstance(ing, dict) and ing.get("original")
+        ]
+
         recipe = Recipe(
             external_id=external_id,
             source="spoonacular",
             source_url=source_url,
             source_attribution=raw.get("sourceName") or raw.get("creditsText"),
             title=raw.get("title", "").strip(),
-            short_description=_strip_html(raw.get("summary")),
+            short_description=_truncate(full_summary, 240),
+            summary=full_summary,
+            ingredients=ingredients or None,
             image_url=raw.get("image"),
             cuisine=cuisine,
             region=region,
@@ -102,6 +112,14 @@ def fetch_recipes_for_region(db: Session, region: str, count: int = 10) -> dict:
 
     db.commit()
     return {"fetched": fetched, "duplicates": duplicates, "source": "spoonacular"}
+
+
+def _truncate(text: str | None, max_len: int) -> str | None:
+    if not text:
+        return None
+    if len(text) <= max_len:
+        return text
+    return text[: max_len - 1].rstrip() + "…"
 
 
 def _strip_html(text: str | None) -> str | None:

@@ -6,6 +6,8 @@ from pydantic import BaseModel, HttpUrl
 class RecipeBase(BaseModel):
     title: str
     short_description: str | None = None
+    summary: str | None = None
+    ingredients: list[str] | None = None
     image_url: HttpUrl | None = None
     source_url: HttpUrl
     source_attribution: str | None = None

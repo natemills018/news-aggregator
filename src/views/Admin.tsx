@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import {
   deleteRecipe,
+  fetchRecipes,
   getRecipeDrafts,
-  getRecipeFetchJob,
   getRecipes,
   getRegions,
   getSubscribers,
-  startRecipeFetch,
   updateRecipe,
 } from "../services/api";
-import type { FetchJobStatus, Recipe, RecipeRegion } from "../types";
+import type { FetchResult, Recipe, RecipeRegion } from "../types";
 
 type Tab = "fetch" | "drafts" | "approved";
 
@@ -119,8 +118,8 @@ const FetchPanel = ({ apiKey }: { apiKey: string }) => {
   const [regions, setRegions] = useState<RecipeRegion[]>([]);
   const [region, setRegion] = useState("");
   const [count, setCount] = useState(10);
-  const [job, setJob] = useState<FetchJobStatus | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState<FetchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -133,37 +132,15 @@ const FetchPanel = ({ apiKey }: { apiKey: string }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
-  useEffect(() => {
-    if (!job || job.status !== "running") return;
-    const interval = setInterval(async () => {
-      try {
-        const fresh = await getRecipeFetchJob(apiKey, job.job_id);
-        setJob(fresh);
-        if (fresh.status !== "running") clearInterval(interval);
-      } catch {
-        clearInterval(interval);
-      }
-    }, 1500);
-    return () => clearInterval(interval);
-  }, [job, apiKey]);
-
-  const handleStart = async () => {
+  const handleFetch = async () => {
     setError(null);
+    setResult(null);
     setSubmitting(true);
     try {
-      const started = await startRecipeFetch(apiKey, region, count);
-      setJob({
-        job_id: started.job_id,
-        status: "running",
-        source: "spoonacular",
-        fetched: null,
-        duplicates: null,
-        error: null,
-        started_at: null,
-        finished_at: null,
-      });
+      const r = await fetchRecipes(apiKey, region, count);
+      setResult(r);
     } catch {
-      setError("Failed to start fetch");
+      setError("Fetch failed. Check the API key and Spoonacular configuration.");
     } finally {
       setSubmitting(false);
     }
@@ -202,34 +179,25 @@ const FetchPanel = ({ apiKey }: { apiKey: string }) => {
           />
         </label>
         <button
-          onClick={handleStart}
-          disabled={submitting || !region || (job?.status === "running")}
+          onClick={handleFetch}
+          disabled={submitting || !region}
           className="px-5 py-2 bg-coral text-white font-medium rounded-lg text-sm hover:bg-coral-dark transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {job?.status === "running" ? "Fetching…" : "Fetch"}
+          {submitting ? "Fetching…" : "Fetch"}
         </button>
       </div>
 
       {error && <p className="text-error text-sm mt-3">{error}</p>}
 
-      {job && (
+      {result && (
         <div className="mt-5 p-4 rounded-lg bg-stone/40 text-sm">
-          {job.status === "running" && (
-            <p className="text-text-secondary">
-              <span className="inline-block animate-pulse">●</span>{" "}
-              Compiling recipes from Spoonacular…
-            </p>
-          )}
-          {job.status === "done" && (
-            <p className="text-text-primary">
-              Done. Fetched <strong>{job.fetched}</strong> new draft
-              {job.fetched === 1 ? "" : "s"}.{" "}
-              {job.duplicates ? `Skipped ${job.duplicates} duplicate(s).` : ""}
-            </p>
-          )}
-          {job.status === "error" && (
-            <p className="text-error">Error: {job.error || "unknown"}</p>
-          )}
+          <p className="text-text-primary">
+            Done. Fetched <strong>{result.fetched}</strong> new draft
+            {result.fetched === 1 ? "" : "s"} for {result.region}.{" "}
+            {result.duplicates
+              ? `Skipped ${result.duplicates} duplicate${result.duplicates === 1 ? "" : "s"}.`
+              : ""}
+          </p>
         </div>
       )}
     </div>
@@ -445,56 +413,106 @@ const RecipeRow = ({
   recipe: Recipe;
   actions: React.ReactNode;
   busy: boolean;
-}) => (
-  <div
-    className={`flex gap-4 bg-white border border-stone rounded-lg p-4 ${
-      busy ? "opacity-60" : ""
-    }`}
-  >
-    {recipe.image_url ? (
-      <img
-        src={recipe.image_url}
-        alt=""
-        className="w-20 h-20 rounded-md object-cover flex-shrink-0"
-      />
-    ) : (
-      <div className="w-20 h-20 rounded-md bg-stone flex-shrink-0" />
-    )}
-    <div className="flex-1 min-w-0">
-      <div className="flex items-start gap-2 mb-1">
-        <h4 className="font-heading font-bold text-navy text-sm truncate">
-          {recipe.title}
-        </h4>
-        {recipe.is_featured && (
-          <span className="text-xs bg-coral text-white px-1.5 py-0.5 rounded">
-            Standout
-          </span>
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasDetails =
+    !!recipe.summary || (recipe.ingredients && recipe.ingredients.length > 0);
+
+  return (
+    <div
+      className={`bg-white border border-stone rounded-lg p-4 ${
+        busy ? "opacity-60" : ""
+      }`}
+    >
+      <div className="flex gap-4">
+        {recipe.image_url ? (
+          <img
+            src={recipe.image_url}
+            alt=""
+            className="w-24 h-24 rounded-md object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-24 h-24 rounded-md bg-stone flex-shrink-0" />
         )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-2 mb-1 flex-wrap">
+            <h4 className="font-heading font-bold text-navy text-base">
+              {recipe.title}
+            </h4>
+            {recipe.is_featured && (
+              <span className="text-xs bg-coral text-white px-1.5 py-0.5 rounded">
+                Standout
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-text-muted mb-1">
+            {recipe.region && <span>{recipe.region}</span>}
+            {recipe.cuisine && <span> · {recipe.cuisine}</span>}
+            {recipe.cook_time_minutes && (
+              <span> · {recipe.cook_time_minutes} min</span>
+            )}
+            {recipe.rating != null && <span> · ★ {recipe.rating.toFixed(1)}</span>}
+            {recipe.source_attribution && (
+              <span> · via {recipe.source_attribution}</span>
+            )}
+          </p>
+          {recipe.short_description && !expanded && (
+            <p className="text-xs text-text-secondary line-clamp-2 mb-2">
+              {recipe.short_description}
+            </p>
+          )}
+          <div className="flex gap-3 text-xs items-center">
+            <a
+              href={recipe.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-coral hover:underline"
+            >
+              View source →
+            </a>
+            {hasDetails && (
+              <button
+                onClick={() => setExpanded((v) => !v)}
+                className="text-text-secondary hover:text-navy cursor-pointer"
+              >
+                {expanded ? "Hide details" : "Show details"}
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 items-end justify-center flex-shrink-0">
+          {actions}
+        </div>
       </div>
-      <p className="text-xs text-text-muted mb-1">
-        {recipe.region && <span>{recipe.region}</span>}
-        {recipe.cuisine && <span> · {recipe.cuisine}</span>}
-        {recipe.cook_time_minutes && <span> · {recipe.cook_time_minutes} min</span>}
-        {recipe.rating != null && <span> · ★ {recipe.rating.toFixed(1)}</span>}
-      </p>
-      {recipe.short_description && (
-        <p className="text-xs text-text-secondary line-clamp-2 mb-2">
-          {recipe.short_description}
-        </p>
+
+      {expanded && hasDetails && (
+        <div className="mt-4 pt-4 border-t border-stone grid gap-4 md:grid-cols-2">
+          {recipe.summary && (
+            <div>
+              <h5 className="font-heading text-xs font-bold text-navy uppercase tracking-wide mb-2">
+                Summary
+              </h5>
+              <p className="text-sm text-text-secondary leading-relaxed">
+                {recipe.summary}
+              </p>
+            </div>
+          )}
+          {recipe.ingredients && recipe.ingredients.length > 0 && (
+            <div>
+              <h5 className="font-heading text-xs font-bold text-navy uppercase tracking-wide mb-2">
+                Ingredients ({recipe.ingredients.length})
+              </h5>
+              <ul className="text-sm text-text-secondary leading-relaxed list-disc list-inside space-y-0.5">
+                {recipe.ingredients.map((ing, i) => (
+                  <li key={i}>{ing}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
-      <a
-        href={recipe.source_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-xs text-coral hover:underline"
-      >
-        View source →
-      </a>
     </div>
-    <div className="flex flex-col gap-2 items-end justify-center flex-shrink-0">
-      {actions}
-    </div>
-  </div>
-);
+  );
+};
 
 export default Admin;

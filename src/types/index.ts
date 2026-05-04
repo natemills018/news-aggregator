@@ -25,6 +25,8 @@ export interface Recipe {
   source: string;
   title: string;
   short_description: string | null;
+  summary: string | null;
+  ingredients: string[] | null;
   image_url: string | null;
   source_url: string;
   source_attribution: string | null;
@@ -44,13 +46,8 @@ export interface RecipeRegion {
   cuisines: string[];
 }
 
-export interface FetchJobStatus {
-  job_id: number;
-  status: "running" | "done" | "error";
-  source: string;
-  fetched: number | null;
-  duplicates: number | null;
-  error: string | null;
-  started_at: string | null;
-  finished_at: string | null;
+export interface FetchResult {
+  region: string;
+  fetched: number;
+  duplicates: number;
 }

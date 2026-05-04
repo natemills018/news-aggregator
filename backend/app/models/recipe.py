@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Integer, String, Text, DateTime, Boolean, Float, UniqueConstraint
+from sqlalchemy import Integer, String, Text, DateTime, Boolean, Float, JSON, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -21,6 +21,8 @@ class Recipe(Base):
 
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     short_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ingredients: Mapped[list | None] = mapped_column(JSON, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     cuisine: Mapped[str | None] = mapped_column(String(100), nullable=True)
